@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MQTT Viewer</title>
+</head>
+<body>
+  <h1>MQTT Messages</h1>
+  <div id="messages">Waiting for messages...</div>
+
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  <script>
+    // Connect to the MQTT broker via WebSocket
+    const broker = "ws://90.156.157.236:9001"; // Replace with your server's WebSocket URL
+    const client = mqtt.connect(broker);
+
+    const topic = "home/temperature"; // MQTT topic
+    const messagesDiv = document.getElementById("messages");
+
+    client.on("connect", () => {
+      console.log("Connected to MQTT broker");
+      client.subscribe(topic, (err) => {
+        if (!err) {
+          console.log(`Subscribed to topic: ${topic}`);
+        }
+      });
+    });
+
+    client.on("message", (topic, message) => {
+      console.log(`Message received: ${message.toString()}`);
+      messagesDiv.innerText = `Received: ${message.toString()} on topic ${topic}`;
+    });
+  </script>
+</body>
+</html>

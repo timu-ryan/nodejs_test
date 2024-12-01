@@ -1,13 +1,41 @@
-const http = require('http');
+const mosca = require('mosca');
+const express = require('express');
+const path = require('path');
 
-// передадим обработчик
-const server = http.createServer((req, res) => {
-  console.log('Пришёл запрос!');
-  res.statusCode = 200;
-  res.statusMessage = 'OK';
-  res.setHeader('Content-Type', 'text/html; charset=utf8');
+const app = express();
+const httpPort = 3000;
 
-  res.end('<h1>Привет, мир!</h1>', 'utf8');
+// MQTT settings
+const mqttSettings = {
+  port: 1883, // MQTT protocol
+  http: {
+    port: 9001, // WebSocket protocol
+    bundle: true,
+    static: './'
+  }
+};
+
+// MQTT Broker
+const mqttServer = new mosca.Server(mqttSettings);
+
+mqttServer.on('ready', () => {
+  console.log('MQTT server is running...');
 });
 
-server.listen(3004);
+mqttServer.on('clientConnected', (client) => {
+  console.log('Client connected:', client.id);
+});
+
+mqttServer.on('published', (packet, client) => {
+  console.log('Message received:', packet.payload.toString());
+});
+
+// Serve the HTML file
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Start HTTP server
+app.listen(httpPort, () => {
+  console.log(`HTTP server running on http://90.156.157.236:${httpPort}`);
+});
