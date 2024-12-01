@@ -1,33 +1,23 @@
-const mosca = require('mosca');
+const aedes = require('aedes')();
+const serverFactory = require('aedes-server-factory');
 const express = require('express');
 const path = require('path');
 
 const app = express();
 const httpPort = 3000;
+const mqttPort = 1883;
+const wsPort = 9001;
 
-// MQTT settings
-const mqttSettings = {
-  port: 1883, // MQTT protocol
-  http: {
-    port: 9001, // WebSocket protocol
-    bundle: true,
-    static: './'
-  }
-};
-
-// MQTT Broker
-const mqttServer = new mosca.Server(mqttSettings);
-
-mqttServer.on('ready', () => {
-  console.log('MQTT server is running...');
+// Create MQTT server
+const mqttServer = serverFactory.createServer(aedes);
+mqttServer.listen(mqttPort, () => {
+  console.log(`MQTT broker running on port ${mqttPort}`);
 });
 
-mqttServer.on('clientConnected', (client) => {
-  console.log('Client connected:', client.id);
-});
-
-mqttServer.on('published', (packet, client) => {
-  console.log('Message received:', packet.payload.toString());
+// Create WebSocket server
+const wsServer = serverFactory.createServer(aedes, { ws: true });
+wsServer.listen(wsPort, () => {
+  console.log(`WebSocket server running on port ${wsPort}`);
 });
 
 // Serve the HTML file
@@ -35,7 +25,18 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Start HTTP server
+// Start the HTTP server
 app.listen(httpPort, () => {
-  console.log(`HTTP server running on http://90.156.157.236:${httpPort}`);
+  console.log(`HTTP server running on http://localhost:${httpPort}`);
+});
+
+// Aedes event handlers
+aedes.on('client', (client) => {
+  console.log('Client connected:', client.id);
+});
+
+aedes.on('publish', (packet, client) => {
+  if (client) {
+    console.log('Message received:', packet.payload.toString());
+  }
 });
